@@ -1,0 +1,418 @@
+{
+  "name": "Calendar Mate Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -2864,
+        -672
+      ],
+      "id": "39fecfee-245b-4c7a-a692-46bb7fa24937",
+      "name": "When chat message received",
+      "webhookId": "84d34c5e-67e9-49cb-993d-d2621a76d8bd"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        -2784,
+        -464
+      ],
+      "id": "133cb25d-11c5-4aa3-aab9-d9790affcbc1",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "CREDENTIAL_ID",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        -2608,
+        -448
+      ],
+      "id": "6750ec0b-b832-4444-8278-d6deab81418e",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Checks free/busy slots or existing events across calendars for specified date ranges",
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "user@example.com",
+          "mode": "list",
+          "cachedResultName": "user@example.com"
+        },
+        "limit": 5,
+        "timeMin": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('After', ``, 'string') }}",
+        "timeMax": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Before', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        -2448,
+        -448
+      ],
+      "id": "7f2b0ce6-9f02-4eb7-8ced-9b7da4c7de94",
+      "name": "check_availability",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "CREDENTIAL_ID",
+          "name": "Google Calendar account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Retrieves detailed event lists for a specific calendar ID within a start and end time.",
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "user@example.com",
+          "mode": "list",
+          "cachedResultName": "user@example.com"
+        },
+        "timeMin": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('After', ``, 'string') }}",
+        "timeMax": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Before', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        -2288,
+        -448
+      ],
+      "id": "1531e250-978c-435f-89d1-a2d450b2b8fb",
+      "name": "get_calendar_events",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "CREDENTIAL_ID",
+          "name": "Google Calendar account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "=Extract the meeting topic/title, start time, duration, and attendees from the user's prompt. Always supply a descriptive title for the event (e.g., 'Architecture Review with Sarah'). Do not leave the title blank.",
+        "calendar": {
+          "__rl": true,
+          "value": "=user@example.com",
+          "mode": "id"
+        },
+        "start": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Start', ``, 'string') }}",
+        "end": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('End', ``, 'string') }}",
+        "additionalFields": {
+          "attendees": [
+            "={{ $fromAI('attendees', 'Comma-separated list of attendee email addresses', 'string') }}"
+          ],
+          "sendUpdates": "all",
+          "summary": "={{ $fromAI('summary', 'Meeting title', 'string') }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        -2128,
+        -448
+      ],
+      "id": "5528d92b-2361-4882-93da-2a36d168385b",
+      "name": "draft_calendar_event",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "CREDENTIAL_ID",
+          "name": "Google Calendar account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "description": "Use this tool to consolidate meeting notes, process transcripts from Google Drive, and draft email digests",
+        "workflowId": {
+          "__rl": true,
+          "value": "HMDVoIJU1mLA6DuD",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/HMDVoIJU1mLA6DuD",
+          "cachedResultName": "Meeting Notes Consolidator Agent"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "meeting_notes_context": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('meeting_notes_context', ``, 'string') }}"
+          },
+          "matchingColumns": [
+            "meeting_notes_context"
+          ],
+          "schema": [
+            {
+              "id": "meeting_notes_context",
+              "displayName": "meeting_notes_context",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        -1424,
+        -448
+      ],
+      "id": "294063cd-6327-4e8e-8b69-a597370632cc",
+      "name": "Call Meeting Notes Consolidator Agent"
+    },
+    {
+      "parameters": {
+        "description": "Use this tool to consolidate Converts lengthy, multi-party email chains into concise bulleted overviews highlighting core context, key decisions, and major discussion points.",
+        "workflowId": {
+          "__rl": true,
+          "value": "HpxOUVhOek7zzOj7",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/HpxOUVhOek7zzOj7",
+          "cachedResultName": "Email Summarizer Agent"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        -1600,
+        -448
+      ],
+      "id": "5511ca90-7a7f-41df-be4c-9688aeb7601f",
+      "name": "Call Email Summarizer Agent"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "=# ROLE & GOAL\nYou are ServionIQ CalendarMate, an autonomous primary AI Copilot for Technical Program Managers. \nYour goal is to manage calendar operations, prevent double-bookings, lifecycle-manage existing events (update/reschedule/delete without duplicating), and autonomously delegate context-processing tasks to specialized sub-agent tools to completion.\n\nToday's date is {{ $now.format('yyyy-MM-dd') }}.\n\n---\n\n# CORE RESPONSIBILITIES & WORKFLOWS\n\n### 1. MEETING SCHEDULING (NEW EVENTS)\n- **Gather Parameters:** Required fields: Topic/Title, Date, Time (with Timezone), Duration, Attendees. If missing, request all remaining details in a single message.\n- **Availability Check:** Always run `check_availability` or `get_calendar_events` before drafting or agreeing to a time. Prioritize standard working hours (9:00 AM – 5:00 PM).\n- **Drafting:** Run `draft_calendar_event` ONLY after receiving explicit user confirmation on final details.\n\n### 2. RESCHEDULING & EVENT UPDATES (STRICT NO-DUPLICATE RULE)\n- **Search First:** When asked to reschedule, move, or change a meeting, run `get_calendar_events` to locate the original event's `eventId`.\n- **Update Strategy:**\n  - If your available calendar tool supports direct updates, update the existing event via its `eventId`.\n  - If using `draft_calendar_event`, execute the delete function on the original `eventId` BEFORE creating the new slot. NEVER leave original events intact.\n- **Conflict Handling:** If requested new slot is occupied, run `check_availability` and present 2–3 alternate open slots.\n\n### 3. EVENT CANCELLATION & DELETION\n- **Search & Verify:** Locate the event using `get_calendar_events` to obtain `eventId` before issuing a delete request.\n- **Confirmation:** Ensure the target event is clearly identified to the user before confirming removal.\n\n### 4. SUB-AGENT AUTONOMOUS DELEGATION\n\n- **Meeting Notes Consolidator Agent:**\n  - **Trigger:** Requests involving meeting summaries, notes consolidation, transcript processing (Google Drive links or files), or generating email digests from meeting notes.\n  - **Payload Requirement:** Extract and pass:\n    1. `source`: Google Drive link, file name, or raw transcript.\n    2. `meeting_title`: Inferred or explicit meeting name.\n    3. `recipients`: Target recipient email addresses (or user email if omitted).\n    4. `action`: Instruction to summarize AND dispatch the formatted email digest.\n  - **Action:** Execute `Call Meeting Notes Consolidator Agent` immediately.\n\n- **Email Summarizer Agent:**\n  - **Trigger:** Requests asking to summarize email threads, process lengthy email chains, extract action items, or digest multi-party inbox messages.\n  - **Payload Requirement:** Extract and pass:\n    1. `email_context`: Raw body, thread ID, or subject query.\n    2. `focus_areas`: Key decisions, action items, or general summary.\n    3. `action`: Instruction to summarize and optionally draft/send an email response digest if requested.\n  - **Execution Constraint:** Execute `Call Email Summarizer Agent` EXACTLY ONCE per user request. Do not retry or break down requests into multiple tool calls.\n\n---\n\n# BEHAVIORAL RULES & CONSTRAINTS\n\n1. **GROUND TRUTH ONLY:** Never invent calendar entries, available slots, email contents, or sub-agent outputs. Always execute designated tools.\n2. **EXPLICIT TOOL MANDATE:** Always execute designated tools (`check_availability`, `get_calendar_events`, `draft_calendar_event`, `Call Meeting Notes Consolidator Agent`, `Call Email Summarizer Agent`) rather than assuming results.\n3. **AUTONOMOUS COMPLETION:** Supply full contextual payloads to sub-agents so they can execute end-to-end without requiring back-and-forth prompts from the parent agent.\n4. **SINGLE DELEGATION CALL:** Call a sub-agent exactly once per single request.\n5. **RELATIVE TIME RESOLUTION:** Translate relative phrases (\"tomorrow\", \"next Monday\", \"3 PM today\") using {{ $now.format('YYYY-MM-DD') }} before passing data to tools.",
+          "maxIterations": 10
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -2208,
+        -672
+      ],
+      "id": "b49cfa96-55b4-4892-8d1a-a40bd90d6b50",
+      "name": "Calendar Mate AI Agent"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Use this tool to permanently remove or delete an existing meeting from Google Calendar using its specific eventId. Must be used when a user explicitly requests a cancellation, or as part of a rescheduling process to remove the old meeting slot before creating a new one to prevent duplicate entries.",
+        "operation": "delete",
+        "calendar": {
+          "__rl": true,
+          "value": "user@example.com",
+          "mode": "list",
+          "cachedResultName": "user@example.com"
+        },
+        "eventId": "={{ $fromAI('eventId', 'The unique Google Calendar event ID to delete', 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        -1952,
+        -448
+      ],
+      "id": "7c2581f3-2d6c-4891-a008-e5af3de2d5f1",
+      "name": "delete_calendar_event",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "CREDENTIAL_ID",
+          "name": "Google Calendar account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "calendar": {
+          "__rl": true,
+          "value": "user@example.com",
+          "mode": "list",
+          "cachedResultName": "user@example.com"
+        },
+        "eventId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Event_ID', ``, 'string') }}",
+        "useDefaultReminders": false,
+        "updateFields": {
+          "end": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('End', ``, 'string') }}",
+          "start": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Start', ``, 'string') }}",
+          "summary": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Summary', ``, 'string') }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        -1776,
+        -448
+      ],
+      "id": "5f5d64e9-9f26-4298-a455-49fb80fa83fd",
+      "name": "update_calendar_event",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "CREDENTIAL_ID",
+          "name": "Google Calendar account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Calendar Mate AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Calendar Mate AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Calendar Mate AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "check_availability": {
+      "ai_tool": [
+        [
+          {
+            "node": "Calendar Mate AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get_calendar_events": {
+      "ai_tool": [
+        [
+          {
+            "node": "Calendar Mate AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "draft_calendar_event": {
+      "ai_tool": [
+        [
+          {
+            "node": "Calendar Mate AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Meeting Notes Consolidator Agent": {
+      "ai_tool": [
+        [
+          {
+            "node": "Calendar Mate AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Email Summarizer Agent": {
+      "ai_tool": [
+        [
+          {
+            "node": "Calendar Mate AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "delete_calendar_event": {
+      "ai_tool": [
+        [
+          {
+            "node": "Calendar Mate AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "update_calendar_event": {
+      "ai_tool": [
+        [
+          {
+            "node": "Calendar Mate AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "6aa6e093-745d-495e-bb2a-40bc24be50d1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "INSTANCE_ID"
+  },
+  "id": "tUuUJerVtGVVuC8n",
+  "tags": []
+}

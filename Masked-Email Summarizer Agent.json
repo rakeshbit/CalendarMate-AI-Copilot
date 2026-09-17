@@ -1,0 +1,503 @@
+{
+  "name": "Email Summarizer Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "getAll",
+        "limit": 20,
+        "simple": false,
+        "filters": {
+          "receivedAfter": "2026-08-25T00:00:00"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        -480,
+        160
+      ],
+      "id": "dbfe4ea1-85fa-464e-884c-760e9e007893",
+      "name": "Get many messages",
+      "webhookId": "8aee3c61-4525-42e7-9548-99ae504d1cd5",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "CREDENTIAL_ID",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "4bb72aed-325b-40dc-a5b1-00f29d90cf64",
+              "leftValue": "={{ $json.headers.from }}",
+              "rightValue": "newsletters",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "faf4fbe6-7821-4b43-82b6-895d123732b7",
+              "leftValue": "={{ $json.headers.subject }}",
+              "rightValue": "Automatic reply",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "3c423d3f-86b5-4dc3-bf4c-bb90ac89e461",
+              "leftValue": "={{ $json.labelIds.join(',') }}",
+              "rightValue": "CATEGORY_PROMOTIONS",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        -256,
+        160
+      ],
+      "id": "222519a1-349e-4427-9156-c6c54915314b",
+      "name": "Filter1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        192,
+        160
+      ],
+      "id": "c2c21335-9d9a-4ce1-b6d9-19a4bb849de6",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "maxItems": 6
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        -32,
+        160
+      ],
+      "id": "41e082e8-18ab-4089-8e72-1526d20e162a",
+      "name": "Limit"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analyze the following email body: {{ $json.text }} 1. Priority: Assign Urgent, Action needed, or FYI. 2. Summary: Write a 1-line summary. 3. Action: Suggest a brief response or action. Return strictly valid JSON: {\"priority\": \"\", \"summary\": \"\", \"action\": \"\"}\n\n\n________________________________________________________________________________________\"Please output the entire response strictly in Markdown format. Do not use any HTML tags, inline styles, or raw code blocks.\"",
+        "options": {
+          "systemMessage": "If using an API or automation tool (like Make, n8n, or Zapier), check your prompt parameters or system message to ensure format constraints are set to Markdown rather than HTML"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        416,
+        208
+      ],
+      "id": "faea5f69-eff8-4248-8a62-b466e379c324",
+      "name": "AI Agent",
+      "executeOnce": false
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        480,
+        16
+      ],
+      "id": "d089002c-84d3-4737-a67d-878ec76c4263",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "sortFieldsUi": {
+          "sortField": [
+            {
+              "fieldName": "priority",
+              "order": "descending"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.sort",
+      "typeVersion": 1,
+      "position": [
+        992,
+        16
+      ],
+      "id": "4e2d7e04-a46b-4a51-9779-899233751375",
+      "name": "Sort"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(item => {\n  let raw = item.json.output || \"\";\n  \n  // Clean markdown backticks and trim\n  let cleaned = raw.replace(/```json/g, '').replace(/```/g, '').trim();\n\n  // Strip leading/trailing quotes if the string is wrapped in a JSON string literal\n  if (cleaned.startsWith('\"') && cleaned.endsWith('\"')) {\n    try {\n      cleaned = JSON.parse(cleaned);\n    } catch (e) {\n      // Fallback in case stripping outer quotes fails\n      cleaned = cleaned.slice(1, -1);\n    }\n  }\n\n  let parsedObj;\n  try {\n    parsedObj = typeof cleaned === 'string' ? JSON.parse(cleaned) : cleaned;\n    \n    // Ensure the result is a valid key-value object (not a primitive or array)\n    if (typeof parsedObj !== 'object' || parsedObj === null || Array.isArray(parsedObj)) {\n      throw new Error(\"Parsed result is not a valid object\");\n    }\n  } catch (e) {\n    parsedObj = {\n      priority: \"FYI\",\n      summary: raw,\n      action: \"\"\n    };\n  }\n\n  return { json: parsedObj };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        768,
+        16
+      ],
+      "id": "3941ee5e-a170-4913-bc83-09ee65ff940b",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Take this array of sorted email items: {{ JSON.stringify($items()) }}\n\nFormat the summary as a beautiful, professional modern HTML email template for a Technical Program Manager. \n\nRequirements:\n1. Use inline CSS styles for clean display across email clients (Gmail, Outlook, Apple Mail).\n2. Wrap everything in a main container with max-width: 650px, sans-serif font, and soft background colors (#f8f9fa).\n3. Group emails into distinct visual card sections by Priority:\n   - 🚨 URGENT (Red accent border/badge: #dc3545)\n   - ⚡ ACTION NEEDED (Orange accent border/badge: #fd7e14)\n   - ℹ️ FYI (Blue accent border/badge: #0d6efd)\n4. Display items inside each section using a clean HTML <table> with proper cell padding, border-bottom separators, and bold headers (Item, Summary, Action).\n5. Output ONLY pure, valid HTML code inside <div> tags. Do NOT use markdown code blocks (```html) or Markdown syntax (# or |).",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1216,
+        16
+      ],
+      "id": "3a7a084c-70fe-421b-88ad-90c466727c7d",
+      "name": "Basic LLM Chain1"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_DOCUMENT_ID",
+          "mode": "list",
+          "cachedResultName": "Email Summarizer",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_DOCUMENT_ID/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Summarizer Sheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_DOCUMENT_ID/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "TimeStamp": "={{ $now.toFormat('yyyy-MM-dd HH:mm:ss') }}",
+            "Digest Output": "={{ $json.text }}",
+            "Email Count": "={{ $('Limit').all().length }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "TimeStamp",
+              "displayName": "TimeStamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Digest Output",
+              "displayName": "Digest Output",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email Count",
+              "displayName": "Email Count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1568,
+        16
+      ],
+      "id": "fc185bb4-4a54-43e2-8861-23a5419cc21d",
+      "name": "Append row in sheet",
+      "executeOnce": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "CREDENTIAL_ID",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "user@example.com",
+        "subject": "=TPM Daily Email Digest - {{ $now.toFormat('yyyy-MM-dd') }}",
+        "message": "={{ $json.htmlDigest }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2016,
+        16
+      ],
+      "id": "d3b6a21c-8012-49c1-b688-14ec96c0a7c4",
+      "name": "Send a message",
+      "webhookId": "12727054-ab73-42d2-a2dc-bec3bf506da3",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "CREDENTIAL_ID",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(item => {\n  let rawHtml = item.json[\"Digest Output\"] || item.json.text || \"\";\n  // Strip markdown code block wrappers if generated by LLM\n  let cleanHtml = rawHtml\n    .replace(/```html/gi, '')\n    .replace(/```/g, '')\n    .trim();\n\n  return {\n    json: {\n      htmlDigest: cleanHtml\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1792,
+        16
+      ],
+      "id": "b2668fe1-f655-4580-b2d7-a59dfd895a49",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -704,
+        160
+      ],
+      "id": "701248a6-ef9c-403b-b738-c9b8df855ac9",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        1296,
+        240
+      ],
+      "id": "beb4ae57-2746-45f6-bfcc-51fbedd95c23",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "CREDENTIAL_ID",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Get many messages": {
+      "main": [
+        [
+          {
+            "node": "Filter1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter1": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Sort",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sort": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain1": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Get many messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Basic LLM Chain1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "43e17570-e4ad-4a2a-8fb3-03498201c167",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "INSTANCE_ID"
+  },
+  "id": "HpxOUVhOek7zzOj7",
+  "tags": []
+}
